@@ -1,0 +1,7 @@
+apiVersion: projectcalico.org/v3
+kind: BGPPeer
+metadata:
+  name: core-sw-82
+spec:
+  peerIP: 5.5.5.82
+  asNumber: 64567

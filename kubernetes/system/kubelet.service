@@ -1,0 +1,30 @@
+[Unit]
+Description=Kubernetes Kubelet
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+After=docker.service
+Requires=docker.service
+
+[Service]
+WorkingDirectory=/data/application/kubernetes
+ExecStart=/data/application/kubernetes/bin/kubelet \
+   --address=172.16.1.31 \
+   --hostname-override=172.16.1.31 \
+   --pod-infra-container-image=harbor.wgwtest.com/guahao/pause-amd64:v3.0 \
+   --experimental-bootstrap-kubeconfig=/data/application/kubernetes/conf/bootstrap.kubeconfig \
+   --kubeconfig=/data/application/kubernetes/conf/kubelet.kubeconfig \
+   --network-plugin=cni \
+   --cni-conf-dir=/etc/cni/net.d \
+   --cert-dir=/data/ssl/kubernetes \
+   --cluster-dns=10.169.0.2 \
+   --cluster-domain=cluster.local. \
+   --hairpin-mode hairpin-veth \
+   --allow-privileged=true \
+   --fail-swap-on=false \
+   --runtime-cgroups=/systemd/system.slice \
+   --kubelet-cgroups=/systemd/system.slice \
+   --logtostderr=true \
+   --v=2 \
+   --logtostderr=false \
+   --log-dir=/data/application/kubernetes/logs
+Restart=on-failure
+RestartSec=5
