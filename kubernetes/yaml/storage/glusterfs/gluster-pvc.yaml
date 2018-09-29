@@ -1,0 +1,14 @@
+nd: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: general-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 50Gi
+  selector:
+    matchLabels:
+      name: general-pv

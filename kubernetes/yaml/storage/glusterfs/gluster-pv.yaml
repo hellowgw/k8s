@@ -1,0 +1,16 @@
+piVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glusterfs-pv
+  labels:
+      name: general-pv
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: k8s_vol

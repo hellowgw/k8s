@@ -1,6 +1,6 @@
 # 目录结构
 ```[root@controller ~]# tree k8s/
-k8s/
+k8s
 ├── calico
 │   ├── conf
 │   │   └── calicoctl.cfg
@@ -22,6 +22,17 @@ k8s/
 │   │   ├── kube-proxy.service
 │   │   └── kube-scheduler.service
 │   └── yaml
+│       ├── coredns.yaml
+│       ├── mytest
+│       │   ├── nginx-deploy-old.yaml
+│       │   └── nginx-deploy-storage.yaml
+│       └── storage
+│           └── glusterfs
+│               ├── gluster-endpoint.yaml
+│               ├── gluster-pvc.yaml
+│               ├── gluster-pv.yaml
+│               └── gluster-service.yaml
+├── readme.md
 └── ssl
     ├── admin-csr.json
     ├── ca-csr.json
@@ -29,4 +40,4 @@ k8s/
     ├── kube-proxy-csr.json
     └── kubernetes-csr.json
 ```
-
+kubele的证书是由master节点分发的,所以不需要准备csr文件

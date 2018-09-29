@@ -1,0 +1,7 @@
+nd: Service
+apiVersion: v1
+metadata:
+  name: glusterfs-cluster
+spec:
+  ports:
+    - port: 1
