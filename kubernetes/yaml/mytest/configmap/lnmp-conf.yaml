@@ -1,0 +1,292 @@
+apiVersion: v1
+data:
+  nginx.conf: |
+    user root root;
+    daemon off;
+    worker_processes 2;
+    worker_rlimit_nofile 65535;
+    pid /data/log/nginx/nginx.pid;
+    events {
+        worker_connections  65535;
+    }
+
+
+    http {
+        include       /usr/local/nginx/conf/mime.types;
+        default_type  application/octet-stream;
+        sendfile        on;
+        server_tokens off;
+        tcp_nopush on; 
+        tcp_nodelay on; 
+        open_file_cache_valid 30s; 
+        open_file_cache_min_uses 1; 
+        open_file_cache max=65535 inactive=20s;
+
+        proxy_connect_timeout 30;
+        proxy_send_timeout 30;
+        proxy_read_timeout 60;
+        proxy_buffer_size 256k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+        proxy_temp_file_write_size 256k;
+
+        proxy_set_header        Host            $http_host;
+        proxy_set_header        X-Real-IP       $remote_addr;
+        proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    REMOTE-HOST         $remote_addr;
+        proxy_set_header X-Forwarded-Proto  $scheme; 
+
+        gzip on;
+        gzip_min_length  1k;
+        gzip_buffers     4 16k;
+        gzip_comp_level 5;
+        gzip_types       text/plain application/xml;
+        gzip_vary on;
+
+        charset utf-8;
+        client_header_buffer_size 128k;
+        client_max_body_size 20m;
+        large_client_header_buffers 4 256k;
+        keepalive_timeout 65;
+
+
+        log_format main '$remote_addr - [$time_local] "$request" '
+                                    '"$status" $body_bytes_sent "$http_referer" '
+                                     '"$http_user_agent" "$http_x_forwarded_for" '
+                                     '"$gzip_ratio" "$request_time" "$scheme" '
+                                     '"$upstream_addr" "$upstream_status" "$upstream_response_time"';
+        access_log off;
+        error_log  /data/log/error.log  error;
+        
+        server {
+            listen 80;
+            client_max_body_size 20m;
+            access_log /data/log/nginx/nginx.log  main;
+
+            location / {
+                root /data/wwwroot;
+                index index.html index.htm index.php;
+                if (!-e $request_filename) {
+                    rewrite ^/index.php/(.*)$ /index.php?s=$1 last;
+                    rewrite ^(.*)$ /index.php?s=$1 last;
+                    break;
+                }
+            }
+            
+
+            location ~ \.php$ {
+                root           /data/wwwroot;
+                fastcgi_pass   127.0.0.1:9000;
+                fastcgi_index  index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_split_path_info ^(.+\.php)(.*)$;                             
+                fastcgi_param PATH_INFO $fastcgi_path_info; 
+                include         /usr/local/nginx/conf/fastcgi_params;
+                fastcgi_connect_timeout 600;
+                fastcgi_send_timeout 600;
+                fastcgi_read_timeout 600;
+                fastcgi_buffers 2 256k;
+                fastcgi_buffer_size 128k;
+                fastcgi_busy_buffers_size 256k;
+                fastcgi_temp_file_write_size 256k;
+            }
+        }   
+    }
+  php-fpm.conf: |
+    [global]
+    error_log = /data/log/php-fpm.log
+    daemonize = no
+    include=/data/conf/www.conf
+  www.conf: |
+    [www]
+    user = www
+    group = www
+    listen = 0.0.0.0:9000
+    pm = dynamic
+    pm.max_children = 300
+    pm.start_servers = 30
+    pm.min_spare_servers = 20
+    pm.max_spare_servers = 30
+    pm.status_path = /pf-status
+    access.log = /data/log/php-fpm.$pool.access.log
+    access.format = "%R - %u %t \"%m %r%Q%q\" %s %f %{mili}d %{kilo}M %C%%"
+    slowlog = /data/log/php-fpm.$pool.slow.log
+    request_slowlog_timeout = 30s
+    request_slowlog_trace_depth = 20
+  php.ini: |
+    [PHP]
+    engine = On
+    short_open_tag = Off
+    precision = 14
+    output_buffering = 4096
+    zlib.output_compression = Off
+    implicit_flush = Off
+    unserialize_callback_func =
+    serialize_precision = -1
+    disable_functions =
+    disable_classes =
+    zend.enable_gc = On
+    expose_php = On
+    max_execution_time = 60
+    max_input_time = 60
+    memory_limit = 128M
+    error_reporting = E_ALL
+    display_errors = On
+    display_startup_errors = On
+    log_errors = On
+    log_errors_max_len = 0
+    ignore_repeated_errors = Off
+    ignore_repeated_source = Off
+    report_memleaks = On
+    html_errors = On
+    error_log = "/data/log/php_errors.log"
+    variables_order = "GPCS"
+    request_order = "GP"
+    register_argc_argv = Off
+    auto_globals_jit = On
+    post_max_size = 64M
+    auto_prepend_file =
+    auto_append_file =
+    default_mimetype = "text/html"
+    default_charset = "UTF-8"
+    doc_root =
+    user_dir =
+    enable_dl = Off
+    file_uploads = On
+    upload_max_filesize = 50M
+    max_file_uploads = 20
+    allow_url_fopen = On
+    allow_url_include = Off
+    default_socket_timeout = 60
+    [CLI Server]
+    cli_server.color = On
+    [Date]
+    date.timezone = PRC
+    [filter]
+    [iconv]
+    [intl]
+    [sqlite3]
+    [Pcre]
+    [Pdo]
+    [Pdo_mysql]
+    pdo_mysql.cache_size = 2000
+    pdo_mysql.default_socket=
+    [Phar]
+    [mail function]
+    SMTP = localhost
+    smtp_port = 25
+    mail.add_x_header = On
+    [ODBC]
+    odbc.allow_persistent = On
+    odbc.check_persistent = On
+    odbc.max_persistent = -1
+    odbc.max_links = -1
+    odbc.defaultlrl = 4096
+    odbc.defaultbinmode = 1
+    [Interbase]
+    ibase.allow_persistent = 1
+    ibase.max_persistent = -1
+    ibase.max_links = -1
+    ibase.timestampformat = "%Y-%m-%d %H:%M:%S"
+    ibase.dateformat = "%Y-%m-%d"
+    ibase.timeformat = "%H:%M:%S"
+    [MySQLi]
+    mysqli.max_persistent = -1
+    mysqli.allow_persistent = On
+    mysqli.max_links = -1
+    mysqli.cache_size = 2000
+    mysqli.default_port = 3306
+    mysqli.default_socket =
+    mysqli.default_host =
+    mysqli.default_user =
+    mysqli.default_pw =
+    mysqli.reconnect = Off
+    [mysqlnd]
+    mysqlnd.collect_statistics = On
+    mysqlnd.collect_memory_statistics = On
+    [OCI8]
+    [PostgreSQL]
+    pgsql.allow_persistent = On
+    pgsql.auto_reset_persistent = Off
+    pgsql.max_persistent = -1
+    pgsql.max_links = -1
+    pgsql.ignore_notice = 0
+    pgsql.log_notice = 0
+    [bcmath]
+    bcmath.scale = 0
+    [browscap]
+    [Session]
+    session.save_handler = files
+    session.save_path = "/data/tmp/session"
+    session.use_strict_mode = 0
+    session.use_cookies = 1
+    session.use_only_cookies = 1
+    session.name = PSI
+    session.auto_start = 0
+    session.cookie_lifetime = 0
+    session.cookie_path = /
+    session.cookie_domain =
+    session.cookie_httponly =
+    session.serialize_handler = php
+    session.gc_probability = 1
+    session.gc_divisor = 1000
+    session.gc_maxlifetime = 1440
+    session.referer_check =
+    session.cache_limiter = nocache
+    session.cache_expire = 180
+    session.use_trans_sid = 0
+    session.sid_length = 26
+    session.trans_sid_tags = "a=href,area=href,frame=src,form="
+    session.sid_bits_per_character = 5
+    [Assertion]
+    zend.assertions = 1
+    [COM]
+    [mbstring]
+    [gd]
+    [exif]
+    [Tidy]
+    tidy.clean_output = Off
+    [soap]
+    soap.wsdl_cache_enabled=1
+    soap.wsdl_cache_dir="/data/tmp/soap"
+    soap.wsdl_cache_ttl=86400
+    soap.wsdl_cache_limit = 5
+    [sysvshm]
+    [ldap]
+    ldap.max_links = -1
+    [dba]
+    [opcache]
+    [curl]
+    [openssl]
+    [yaf]
+    extension = yaf.so
+    yaf.use_namespace = On
+    yaf.use_spl_autoload = On
+    [yar]
+    extension = yar.so
+    yar.packager = msgpack
+    yar.timeout = 10000
+    yar.connect_timeout = 1000
+    yar.expose_info = Off
+    yar.allow_persistent = On
+    [SeasLog]
+    extension = seaslog.so
+    seaslog.default_basepath = "/data/log/wwwroot/"
+    seaslog.default_template = "[%T | %L | %P | %Q | %R]  %M"
+    seaslog.use_buffer = 0
+    seaslog.level = 8
+    seaslog.trace_exception = 1
+    seaslog.trim_wrap = 1
+    seaslog.ignore_warning = 0
+    [MsgPack]
+    extension=msgpack.so
+    [MongoDB]
+    extension=mongodb.so
+    [igbinary]
+    extension=igbinary.so
+    [Redis]
+    extension=redis.so
+kind: ConfigMap
+metadata:
+  name: lnmp-config
+  namespace: default
