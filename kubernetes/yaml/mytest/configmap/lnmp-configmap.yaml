@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: nginx-container
-        image: harbor.jinxiang.com/guahao/nginx:v2.2
+        image: harbor.office.com/guahao/nginx:v2.2
         ports:
         - containerPort: 80
         volumeMounts:
@@ -30,7 +30,7 @@ spec:
         args: ["-c","/data/conf/nginx.conf"]
 
       - name: php-container
-        image: harbor.jinxiang.com/guahao/php:v7.2-ext
+        image: harbor.office.com/guahao/php:v7.2-ext
         ports:
         - containerPort: 9000
         volumeMounts:
